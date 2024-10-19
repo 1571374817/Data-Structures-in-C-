@@ -135,6 +135,9 @@ int array_List<T>::indexOf(const T &value) const {
 // erase
 template<typename T>
 void array_List<T>::erase(int index) {
+    if(list_size == 0) {
+        return;
+    }
     check_index(index);
     for(int i = index; i < list_size - 1; ++i) {
         elements[i] = elements[i + 1];
@@ -142,6 +145,15 @@ void array_List<T>::erase(int index) {
     // 删除一个元素，list_size - 1
     // 需要删除最后一个元素
     elements[--list_size].~T();
+    // 当线性表元素减少到 list_size < array_capacity / 4
+    // 将数组长度减少到 max{initial_capacity,array_capacity}
+    if(list_size < array_capacity / 4) {
+        int new_array_capacity = std::max(10,array_capacity / 2);
+        T *new_elements = new T[new_array_capacity];
+        std::copy(elements, elements + list_size, new_elements);
+        delete[] elements;
+        elements = new_elements;
+    }
 }
 
 // insert
