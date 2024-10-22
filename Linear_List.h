@@ -212,7 +212,7 @@ struct chain_Node {
     }
 };
 
-// 以下实现的方法是不含头节点的单向链表
+/********************** 以下实现的方法是不含头节点的单向链表 *************************************/
 template<typename T>
 class chain_List : public Linear_List<T> {
 public:
@@ -258,7 +258,7 @@ chain_List<T>::chain_List(int initial_capacity) {
 template<typename T>
 chain_List<T>::chain_List(const chain_List<T> &other_List) {
     list_size = other_List.list_size;
-    if(list_size == 0) {
+    if (list_size == 0) {
         first_Node = nullptr;
         return;
     }
@@ -283,7 +283,7 @@ chain_List<T>::chain_List(const chain_List<T> &other_List) {
 template<typename T>
 chain_List<T>::~chain_List() {
     // 删除链表的所有节点
-    while(first_Node != nullptr) {
+    while (first_Node != nullptr) {
         chain_Node<T> *temp = first_Node->next;
         delete first_Node;
         first_Node = temp;
@@ -305,7 +305,7 @@ T &chain_List<T>::get(int index) const {
 
     // 移向需要返回的节点
     chain_Node<T> *current_Node = first_Node;
-    for(int i = 0; i < index; ++i) {
+    for (int i = 0; i < index; ++i) {
         current_Node = current_Node->next;
     }
     return current_Node->element;
@@ -324,7 +324,7 @@ int chain_List<T>::indexOf(const T &value) const {
         ++index;
     }
     // 没找到，返回 -1
-    if(current_Node == nullptr) {
+    if (current_Node == nullptr) {
         return -1;
     }
     return index;
@@ -340,13 +340,13 @@ void chain_List<T>::erase(int index) {
     // 要删除的节点
     chain_Node<T> *delete_Node;
     // 删除第一个节点
-    if(index == 0) {
+    if (index == 0) {
         delete_Node = first_Node;
         first_Node = first_Node->next;
-    }else {
+    } else {
         // 删除其他位置
         chain_Node<T> *previous_Node = first_Node; // 要删除节点的前驱节点
-        for(int i = 1; i < index - 1; ++i) {
+        for (int i = 1; i < index - 1; ++i) {
             previous_Node = previous_Node->next;
         }
         delete_Node = previous_Node->next;
@@ -360,17 +360,17 @@ void chain_List<T>::erase(int index) {
 template<typename T>
 void chain_List<T>::insert(int index, const T &value) {
     // 无效索引
-    if(index < 0 || index > list_size) {
+    if (index < 0 || index > list_size) {
         throw std::invalid_argument("index out of range.");
     }
     // 在第一个位置插入
-    if(index == 0) {
+    if (index == 0) {
         first_Node = new chain_Node<T>(value, first_Node);
-    }else {
+    } else {
         // 在其他位置插入
         // 找到要插入位置的前驱
         chain_Node<T> *previous_Node = first_Node;
-        for(int i = 0; i < index - 1; ++i) {
+        for (int i = 0; i < index - 1; ++i) {
             previous_Node = previous_Node->next;
         }
         previous_Node->next = new chain_Node<T>(value, previous_Node->next);
@@ -382,10 +382,166 @@ void chain_List<T>::insert(int index, const T &value) {
 template<typename T>
 void chain_List<T>::output() const {
     chain_Node<T> *current_Node = first_Node;
-    while(current_Node != nullptr) {
+    while (current_Node != nullptr) {
         std::cout << current_Node->element << " ";
         current_Node = current_Node->next;
     }
 }
 
+/************************************** 带头节点的单向循环链表 ************************************/
+
+template<typename T>
+class circular_chain_List_with_header : public Linear_List<T> {
+public:
+    // 构造函数、拷贝构造函数、析构函数
+    explicit circular_chain_List_with_header(int initial_capacity = 10);
+
+    circular_chain_List_with_header(const circular_chain_List_with_header<T> &other_List) ;
+
+    ~circular_chain_List_with_header() override;
+
+    // ADT
+    [[nodiscard]] bool is_empty() const override { return list_size == 0; }
+    [[nodiscard]] int size() const override { return list_size; }
+
+    T &get(int index) const override;
+
+    int indexOf(const T &value) const override;
+
+    void erase(int index) override;
+
+    void insert(int index, const T &value) override;
+
+    void output() const override;
+
+private:
+    void check_index(int index) const;
+
+    chain_Node<T> *header_Node; // 头节点
+    int list_size{};
+};
+
+// 构造函数
+template<typename T>
+circular_chain_List_with_header<T>::circular_chain_List_with_header(int initial_capacity) {
+    header_Node = new chain_Node<T>();
+    header_Node->next = header_Node;
+    list_size = 0;
+}
+
+// 拷贝构造函数
+template<typename T>
+circular_chain_List_with_header<T>::circular_chain_List_with_header(const circular_chain_List_with_header<T> &other_List) {
+    list_size = other_List.list_size;
+    if(list_size == 0) {
+        header_Node = new chain_Node<T>();
+        header_Node->next = header_Node;
+    }else {
+        // 头节点
+        header_Node = new chain_Node<T>();
+        // 要复制的节点
+        chain_Node<T> *source_Node = other_List.header_Node->next;
+        // 新链表的最后一个节点
+        chain_Node<T> *target_Node = header_Node;
+        while (source_Node != other_List.header_Node) {
+            target_Node->next = new chain_Node<T>(source_Node->element);
+            target_Node = target_Node->next;
+            source_Node = source_Node->next;
+        }
+        // 形成循环
+        target_Node->next = header_Node;
+    }
+}
+
+// 析构函数
+template<typename T>
+circular_chain_List_with_header<T>::~circular_chain_List_with_header() {
+    chain_Node<T> *current_Node = header_Node->next;
+    while (current_Node != header_Node) {
+        chain_Node<T> *temp = current_Node;
+        current_Node = current_Node->next;
+        delete temp;
+    }
+    delete header_Node;
+}
+
+// check_index
+template<typename T>
+void circular_chain_List_with_header<T>::check_index(int index) const {
+    if (index < 0 || index >= list_size) {
+        throw std::invalid_argument("index out of range.");
+    }
+}
+
+// get
+template<typename T>
+T &circular_chain_List_with_header<T>::get(int index) const {
+    check_index(index);
+    chain_Node<T> *current_Node = header_Node->next;
+    for (int i = 0; i < index; ++i) {
+        current_Node = current_Node->next;
+    }
+    return current_Node->element;
+}
+
+// indexOf
+template<typename T>
+int circular_chain_List_with_header<T>::indexOf(const T &value) const {
+    int index = 0;
+    chain_Node<T> *current_Node = header_Node->next;
+    while (current_Node != header_Node) {
+        if (current_Node->element == value) {
+            break;
+        }
+        current_Node = current_Node->next;
+        ++index;
+    }
+    if(current_Node == header_Node) {
+        return -1;
+    }
+    return index;
+}
+
+// erase
+template<typename T>
+void circular_chain_List_with_header<T>::erase(int index) {
+    if(list_size == 0) {
+        return;
+    }
+    check_index(index);
+    chain_Node<T> *previous_Node = header_Node;
+    for(int i = -1; i < index - 1; ++i) {
+        previous_Node = previous_Node->next;
+    }
+    chain_Node<T> *delete_Node = previous_Node->next;
+    previous_Node->next = previous_Node->next->next;
+    delete delete_Node;
+}
+
+// insert
+template<typename T>
+void circular_chain_List_with_header<T>::insert(int index, const T &value) {
+    // 无效索引
+    if (index < 0 || index > list_size) {
+        throw std::invalid_argument("index out of range.");
+    }
+    chain_Node<T> *previous_Node = header_Node;
+    for (int i = -1; i < index - 1; ++i) {
+        previous_Node = previous_Node->next;
+    }
+    // 构造要插入的节点
+    auto *new_Node = new chain_Node<T>(value, previous_Node->next);
+    previous_Node->next = new_Node;
+    ++list_size;
+}
+
+// output
+template<typename T>
+void circular_chain_List_with_header<T>::output() const {
+    chain_Node<T> *current_Node = header_Node->next;
+    while (current_Node != header_Node) {
+        std::cout << current_Node->element << " ";
+        current_Node = current_Node->next;
+    }
+}
 #endif //LINEAR_LIST_H
