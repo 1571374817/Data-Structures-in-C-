@@ -6,8 +6,6 @@
 #define STACK_H
 #include <stdexcept>
 
-#include "Linear_List.h"
-
 // 用C++实现栈
 
 // 抽象数据类型 stack{
@@ -39,7 +37,7 @@ public:
     virtual void push(const T &x) = 0;
 };
 
-// 用数组描述
+/********************************************用数组描述***********************************************/
 template<typename T>
 class array_stack : public stack<T> {
 public:
@@ -93,12 +91,12 @@ array_stack<T>::array_stack(const array_stack<T> &other_stack) {
     array_size = other_stack.array_size;
     stack = new T[array_size];
     stack_top = other_stack.stack_top;
-    std::copy(other_stack.stack, other_stack.stack + other_stack.stack_top + 1,stack);
+    std::copy(other_stack.stack, other_stack.stack + other_stack.stack_top + 1, stack);
 }
 
 template<typename T>
 array_stack<T> &array_stack<T>::operator=(const array_stack<T> &other_stack) {
-    if(this != &other_stack) {
+    if (this != &other_stack) {
         delete[] stack;
         array_size = other_stack.array_size;
         stack = new T[array_size];
@@ -120,6 +118,126 @@ void array_stack<T>::push(const T &x) {
         array_size = new_array_size;
     }
     stack[++stack_top] = x; // 在栈顶插入
+}
+
+/********************************************用链表描述***********************************************/
+// 链表节点
+template<typename T>
+struct chain_Node {
+    T element;
+    chain_Node<T> *next;
+
+    // 方法
+    chain_Node() = default;
+
+    explicit chain_Node(const T &x) : element(x), next(nullptr) {
+    }
+
+    chain_Node(const T &x, chain_Node<T> *next) : element(x), next(next) {
+    }
+};
+
+template<typename T>
+class linked_stack : public stack<T> {
+public:
+    explicit linked_stack(int initial_capacity = 10);
+
+    linked_stack(const linked_stack<T> &other_stack);
+
+    linked_stack<T> &operator=(const linked_stack<T> &other_stack);
+
+    ~linked_stack() override;
+
+    [[nodiscard]] bool empty() const override { return stack_size == 0; }
+
+    [[nodiscard]] int size() const override { return stack_size; }
+
+    T &top() const override {
+        if (stack_size == 0) {
+            throw std::out_of_range("stack is empty");
+        }
+        return stack_top->element;
+    }
+
+    void pop() override;
+
+    void push(const T &x) override;
+
+private:
+    chain_Node<T> *stack_top; // 栈顶指针
+    int stack_size;           // 栈中元素个数
+};
+
+template<typename T>
+linked_stack<T>::linked_stack(int initial_capacity) {
+    stack_size = 0;
+    stack_top = nullptr;
+}
+
+template<typename T>
+linked_stack<T>::linked_stack(const linked_stack<T> &other_stack) {
+    stack_size = other_stack.stack_size;
+    if(other_stack.stack_size == 0) {
+        stack_top = nullptr;
+        return;
+    }
+    chain_Node<T> *source_stack_top = other_stack.stack_top;
+    stack_top = new chain_Node<T>(source_stack_top->element);
+    chain_Node<T> *target = stack_top;
+    while(source_stack_top != nullptr) {
+        target->next = new chain_Node<T>(source_stack_top->element);
+        target = target->next;
+        source_stack_top = source_stack_top->next;
+    }
+    target->next = nullptr;
+}
+
+template<typename T>
+linked_stack<T> &linked_stack<T>::operator=(const linked_stack<T> &other_stack) {
+    if(this != &other_stack) {
+        while(stack_top != nullptr) {
+            chain_Node<T> *temp = stack_top;
+            stack_top = stack_top->next;
+            delete temp;
+        }
+        stack_size = other_stack.stack_size;
+        chain_Node<T> *source_stack_top = other_stack.stack_top;
+        stack_top = new chain_Node<T>(source_stack_top->element);
+        chain_Node<T> *target = stack_top;
+        while(source_stack_top != nullptr) {
+            target->next = new chain_Node<T>(source_stack_top->element);
+            target = target->next;
+            source_stack_top = source_stack_top->next;
+        }
+        target->next = nullptr;
+    }
+    return *this;
+}
+
+template<typename T>
+void linked_stack<T>::pop() {
+    if (stack_size == 0) {
+        throw std::out_of_range("stack is empty");
+    }
+    chain_Node<T> *temp = stack_top->next;
+    delete stack_top;
+    stack_top = temp;
+    --stack_size;
+}
+
+template<typename T>
+void linked_stack<T>::push(const T &x) {
+    stack_top = new chain_Node<T>(x, stack_top);
+    ++stack_size;
+}
+
+template<typename T>
+linked_stack<T>::~linked_stack() {
+    while (stack_top != nullptr) {
+        chain_Node<T> *temp = stack_top->next;
+        delete stack_top;
+        stack_top = temp;
+    }
 }
 
 #endif //STACK_H
