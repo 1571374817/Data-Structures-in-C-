@@ -223,6 +223,16 @@ public:
 
     ~chain_List() override;
 
+    /**********************为链表算法实现提供接口*************************/
+    chain_Node<T> *get_first_Node() const {
+        return first_Node;
+    }
+
+    void set_first_Node(chain_Node<T> *node) {
+        first_Node = node;
+    }
+    /******************************************************************/
+
     // ADT
     [[nodiscard]] bool is_empty() const override { return list_size == 0; }
     [[nodiscard]] int size() const override { return list_size; }
